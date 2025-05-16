@@ -13,7 +13,7 @@ Running the model requires a user to have both NetLogo 6.4 and python installed.
 | ------------- | ------------- |
 | slr_adapt_model.nlogo  | The model itself built in NetLogo 6.4 (Wilensky, U (1999). NetLogo. http://ccl.northwestern.edu/netlogo/. Center for Connected Learning and Computer-Based Modeling, Northwestern University, Evanston, IL.)  |
 | total_harbor files  | GIS files to generate the proper shapes within the NetLogo model.  |
-| boston_logan_maybe files  | GIS files used to ID Boston Logan  |
+| boston_logan_maybe files  | GIS files used for Boston Logan airport location  |
 | storm_surge_pattern_slr_0.csv, storm_surge_pattern_slr_1.csv, storm_surge_pattern_slr_3.csv, storm_surge_pattern_slr_5.csv  | Pre-generated patterns of storm surges to use in experiments.  |
 
 
