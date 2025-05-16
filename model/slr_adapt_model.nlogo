@@ -1,31 +1,14 @@
-;To-do on Friday: Get the VC system (as it stands) over into the new code
-;re-run all RA
+;this model is designed to explore trade-offs in adaptation according to three governance regimes: no cooperation, voluntary cooperation, and a mandated regional authority
+; this model uses NetLogo with GIS and python extensions to run Properly
+; All code can be found below and addition documentation is linked to the GitHub
 
-
-;how to deal with cost cap:
-
-;step 1 max cost (can refine later)
-;boston mun annual = 20M (https://www.wbur.org/news/2021/06/16/boston-seaport-fort-point-climate-change-sea-level)
-;quincy mun annual = 2.72 M based on ratio above (https://cms7files1.revize.com/quincyma/FY2023%20Adopted%20Budget.pdf)
-;Winthrop mun annual = 0.56 M
-
-;for property_owners, assume cost cap = 5% building value = 15,000k/year
-;for MBTA,
-;for BOS Logan + food dist (50 M/year?) - should be very high
-;if cost is too high, then agents are assumed to 'save'
-
-
-
-;these are necessary to load the map, process csvs, incorporate python, and track the time functions take to run
-;let's plan maintenance feed
-   ;maybe add extra adaptation outcomes
-   ;rather than assuming adaptation cooperation, add an evaluation metric here with the maintenance fee where cost <= planned cost independently
+;load in extensions
 extensions [ gis
   csv
   py
   profiler]
 
-
+;set the name of all global variables in the entire model
 globals[
   harbor-coopertative-construct-list
   mbta-adapt-cost-test
@@ -472,16 +455,10 @@ municipalities-own[
   total-damage
   ;name of the region
   name
-  ;projection of an annual flood height
-  ;flood-height-proj
-  ;total-proj-damage
-  ;damage-proj
   ;desired adaptation of municipalities
   adaptation-intention
   ;exisitng adaptation
   adaptation
-  ;adaptation-test
-  ;cumulative adaptation cost
   total-adaptation-cost
   ;time step adaptation cost
   adaptation-cost
@@ -889,8 +866,6 @@ to setup-patches
     )
   gis:set-drawing-color green
   gis:fill total-harbor 1
-  ;gis:set-drawing-color brown
-  ;gis:draw mbta-route 1
   gis:set-drawing-color green + 3
   gis:fill boston-logan 1
   gis:apply-coverage total-harbor "TOWN" town
@@ -1537,20 +1512,9 @@ ask links[
   ;setup-python
   set ra-annual-budget sum ([annual-budget] of municipalities) + sum ([annual-budget] of mbta-agents) + sum ([annual-budget] of private-assets)
 
-  ;open the files according to sea level rise if the method = behavior space
+  ;open the files according to sea level rise if the method = behavior space to continue calling the same slr patterns to allow for direct comparison
   if Method = "behavior space" [
-     ;1st two not done yeat
-  if storm-surge-method = "random" [
-    if sea-level-rise = "no trend" [
-      file-close-all
-      file-open "slr_long_flood.csv"
-      set slr-array csv:from-file "slr_long_flood.csv"
-    ]
-    if sea-level-rise = "fit trend" [
-      file-close-all
-      file-open "slr_long_flood.csv"
-      set slr-array csv:from-file "slr_long_flood.csv"
-    ]
+    ;NOTE: THIS METHOD ONLY WORKS FOR 0, 1, 3, 5 - OTHER SLR SCENARIOS DO NOT HAVE PRE-GENERATED CSVS AND SHOULD BE RUN WITH "method" = "normal"
     if sea-level-rise = 0 [
       file-close-all
       file-open "storm_surge_pattern_slr_0.csv"
@@ -1571,13 +1535,13 @@ ask links[
       file-open "storm_surge_pattern_slr_5.csv"
       set slr-array csv:from-file "storm_surge_pattern_slr_5.csv"
     ]
-  ]
+
   ]
 end
 
 
 to setup-python
-  ;this code preps python module
+  ;this code preps python module and imports packages
   set year 2021
   set year-start 2021
   clear-output
@@ -1594,15 +1558,13 @@ to setup-python
       "new_mu = 6.69415"
       "new_var= .3223"
       "new_stdev = new_var ** 0.5")
-
-
 end
 
 
 to generate-linkages
   ;creates illustrative linkages of the agents that would cooperate on a shared seawall - only applies visually
   if include-linkages = True[
-    ;MBTA links to all other agents since all gaents benefit
+    ;MBTA links to all other agents since all afents benefit
     set link-value 0.01
     ask mbta-agents [
       create-exchanges-to other turtles [
@@ -1635,7 +1597,7 @@ to generate-linkages
 end
 
 to go
-
+  ;steps if no adaptation is permitted
   if model-version = "no adaptation" [
     ;must generate floods
   if Method = "normal" [
@@ -1644,9 +1606,6 @@ to go
     generate-flood-from-csv]
     ;function to calculate damage
   calculate-damage
-    output-print(flood-height)
-    output-print([damage-time-step] of municipalities with [name = "south-shore"])
-    output-print([damage-time-step] of municipalities with [name = "boston"])
   ;ask everybody to update damages to include the current year
    ask municipalities [
       set total-damage total-damage + damage-time-step]
@@ -1660,7 +1619,7 @@ to go
     ;no adaptation so no need for adaptation functions
   ]
 
-
+  ; steps for each adaptation regime are below
   if model-version = "no cooperation"[
     ;indicates setting premium function if insurance is on
     if insurance-module? = true [
@@ -1944,7 +1903,7 @@ to calculate-new-premium
 end
 
 ;Functions below calculate damage based on the annual flood height
-;Curves are fitted from damages calculated in Feasibility Study for Outer Harber Barrier as Shown in the ODD Protocol
+;Curves are fitted from damages calculated in Feasibility Study for Outer Harber Barrier as Shown in the model description
 
 to calculate-damage-allston
   ;damage curves taken from python notebook fitting other damages
@@ -2522,7 +2481,7 @@ to mbta-damages-all-at-once
 end
 
 to mbta-damages-segments
-  ;PICK UP HERE
+ ;assume damge structure and cost structure for each sw segment according to the following lists
  set mbta-damage-list-boston (list 0.02 0.02 0.02 0.10 0.15 0.02 0.05 0.40 0.02)
   set mbta-cost-proportion-list [0.025 0.025 0.05 0.05 0.1 0.25 0.25 0.05 0.025 0.15 0.025]
   set mbta-damage-proportion-list (list 0.10 0.10 0.02 0.02 0.02 0.10 0.15 0.02 0.05 0.40 0.02)
@@ -2545,14 +2504,13 @@ to mbta-damages-segments
      ;3) MBTA has adapted and mun has -> protection according to whichever is higher
      ;4) mbta has not adapted and mun has -> protection according to mun
 
-  ;1) assemble list of adaptations across the harbor - we can borrow ra-adaptation-list
+  ;1) assemble list of adaptations across the harbor - we can borrow ra-adaptation-list as the variable name (for scenarios without RA, we need to build it)
   if model-version != "regional authority" [
     set ra-adaptation-list boston-adaptation-list
     let target-adaptation first [adaptation] of municipalities with [name = "south-shore"]
     set ra-adaptation-list insert-item 0 ra-adaptation-list target-adaptation
     let target-adaptation-2 first [adaptation] of municipalities with [name = "north-shore"]
     set ra-adaptation-list insert-item 0 ra-adaptation-list target-adaptation-2
-    ;output-print(ra-adaptation-list)
   ]
 
   ;2) now we go through and actually get the damages
@@ -2590,12 +2548,11 @@ to mbta-damages-segments
 
     set test-pos test-pos + 1
   ]
-
 end
 
 
 to adaptation-decision
-
+  ;this goes through the adaptation decision-making process for each agent type for no cooperation
 
   ask municipalities[
     ;set parameter for the legnth of time to predict
@@ -2632,11 +2589,7 @@ to adaptation-decision
         let damage_w_adaptation python-output
         set thirty_year_damage_sw (damage_wout_adaptation + damage_w_adaptation)
 
-        ;OLD CODE BELOW 10_25
-        ;calculate projected damages through n years without a sw, where n is given by 'foresight'
-        ;municipality-projected-damages
-        ;calculate projected damages through n years with a sw, where n is given by 'foresight'
-        ;municipality-projected-damages-sw
+
 
         ;write code that adjusts benefits according to EJ weighting
         ifelse prioritization-method = "EJ" [
@@ -2836,8 +2789,6 @@ to adaptation-decision
 
       let best-ratio max benefit_cost_list_behavior
       set identifier position best-ratio benefit_cost_list_behavior
-      ;NOTE 2/27 ASSUMES PLANNED ADAPTATION COST INDICATES COST OF ADAPTATIONS ADN INSURANCE BOTH
-      ;CHANGE BELOW FOR TEST
       if best-ratio = 0 [
         set identifier 5]
 
@@ -2846,13 +2797,13 @@ to adaptation-decision
         set adaptation-intention "aquafence"
         set planned-adaptation-cost aquafence-cost-perm
       ]
-;      if identifier = 4[
+
        if identifier = 1[
         set insurance-intention False
         set adaptation-intention "local-seawall"
         set planned-adaptation-cost seawall-cost-perm
       ]
-;      if identifier = 5[
+
        if identifier = 2[
         ; no adaptation
         set insurance-intention False
@@ -2951,10 +2902,8 @@ to adaptation-decision
 
       let best-ratio max benefit_cost_list_behavior
       set identifier position best-ratio benefit_cost_list_behavior
-      ;NOTE 2/27 ASSUMES PLANNED ADAPTATION COST INDICATES COST OF ADAPTATIONS ADN INSURANCE BOTH
 
-
-       if identifier = 0[
+        if identifier = 0[
         set insurance-intention False
         set adaptation-intention "local-seawall"
         set planned-adaptation-cost seawall-cost-perm
@@ -3049,7 +2998,6 @@ to adaptation-decision
              ;insruance-af-damages is the component of damages that insurance pays
              let insurance-af-benefits (thirty_year_damage - (thirty_year_damage_af - insurance-af-damages)) * ej-weight
 
-
              ;option 3: insurance with a seawall - projects for length of 'foresight'
              let seawall-cost-2020-ins-pt-1  (5300 * perimeter)
              let seawall-cost-2020-ins-perm seawall-cost-2020-ins-pt-1 + (seawall-cost-2020-ins-pt-1 * permitting-cost-proportion)
@@ -3070,7 +3018,6 @@ to adaptation-decision
              [set insurance-sw-damages thirty_year_damage_sw * (1 - deductible)]
              ;insruance-af-damages is the component of damages that insurance pays
              let insurance-sw-benefits (thirty_year_damage - (thirty_year_damage_sw - insurance-sw-damages)) * ej-weight
-
 
             ;option 4: aquafence alone - projects for length of 'foresight'
             let aquafence-benefit (thirty_year_damage - thirty_year_damage_af) * ej-weight
@@ -3106,16 +3053,12 @@ to adaptation-decision
            ;insurance-sw-cost, insurance-sw-benefit
            ;aquafence-cost, aquafence-benefit
            ;seawall-cost, seawall-benefit
-;CHANGE BELOW FOR TEST
       let cost_list (list insurance-cost insurance-af-cost insurance-sw-cost aquafence-cost-all seawall-cost-all)
       let benefit_list (list insurance-benefit insurance-af-benefits insurance-sw-benefits aquafence-benefit seawall-benefit)
       set benefit_cost_list [0 0 0 0 0]
       set benefit_cost_list_behavior [0 0 0 0 0]
 
-;      let cost_list (list aquafence-cost seawall-cost)
-;      let benefit_list (list aquafence-benefit seawall-benefit)
-;        set benefit_cost_list [0 0]
-;      set benefit_cost_list_behavior [0 0]
+      ;explore the benefit-cost ratio of each step
       set test-pos 0
       foreach cost_list[
         [x]-> let option-cost x
@@ -3158,8 +3101,7 @@ to adaptation-decision
 
       let best-ratio max benefit_cost_list_behavior
       set identifier position best-ratio benefit_cost_list_behavior
-      ;NOTE 2/27 ASSUMES PLANNED ADAPTATION COST INDICATES COST OF ADAPTATIONS ADN INSURANCE BOTH
-      ;CHANGE BELOW FOR TEST
+
       if best-ratio = 0 [
         set identifier 5]
       if identifier = 0 [
@@ -3223,7 +3165,6 @@ to adaptation-decision
         property_owner-projected-damages-sw
         let sw_damages python-output
         set thirty_year_damage_sw no_adapt_damages_1 + sw_damages
-      ;CHANGE BELOW FOR TEST
       ;option 1: purchase insurance
       let insurance-coverage (1 - deductible) * annual-expected-damage-af
              ifelse insurance-coverage > max-flood-insurance-coverage [
@@ -3272,16 +3213,10 @@ to adaptation-decision
 
 
       ;option 4: Do nothing
-
-;COMMENT OUT BELOW FOR TEST
       let cost_list (list insurance-cost insurance-sw-cost seawall-cost-all)
       let benefit_list (list insurance-benefit insurance-sw-benefits seawall-benefit)
       set benefit_cost_list [0 0 0]
       set benefit_cost_list_behavior [0 0 0]
-;      let cost_list (list seawall-cost)
-;      let benefit_list (list seawall-benefit)
-;      set benefit_cost_list [0]
-;      set benefit_cost_list_behavior [0]
       set test-pos 0
       foreach cost_list[
         [x]-> let option-cost x
@@ -3311,9 +3246,7 @@ to adaptation-decision
 
       let best-ratio max benefit_cost_list_behavior
       set identifier position best-ratio benefit_cost_list_behavior
-      ;NOTE 2/27 ASSUMES PLANNED ADAPTATION COST INDICATES COST OF ADAPTATIONS ADN INSURANCE BOTH
 
-;COMMENT OUT BELOW FOR TEST
       if best-ratio = 0 [
         set identifier 5]
       if identifier = 0 [
@@ -3339,7 +3272,6 @@ to adaptation-decision
         ]
     ]
         if adaptation = "local-seawall"[
-        ;COMMENT OUT ALL CODE BELOW FOR TEST
 
           py:set "year" year
           property_owner-projected-damages-sw
@@ -3462,8 +3394,6 @@ to adaptation-decision
              [set insurance-af-damages thirty_year_damage_af * (1 - deductible)]
              ;insruance-af-damages is the component of damages that insurance pays
              let insurance-af-benefits (thirty_year_damage - (thirty_year_damage_af - insurance-af-damages)) * ej-weight
-
-
 
 
       ;option 3: insurance with a seawall - projects for length of 'foresight'
@@ -3804,9 +3734,9 @@ to adaptation-decision
 end
 
 to mbta-adaptation-decision-all-at-once
+  ;code for MBTA decision-making assuming all or nothing
   ;Note: No EJ weighting beaucause it is relative to the whole region and the entire system would be adapted at once
-
-    set foresight foresight-mun-pas-mbta
+   set foresight foresight-mun-pas-mbta
 
   ;step 1: get the annual-expected-damage
   py:set "year" year
@@ -3873,8 +3803,7 @@ to mbta-adaptation-decision-all-at-once
       set test-pos test-pos + 1
   ]
     let seawall-benefit (additional-damage - thirty_year_damage_sw)
-;        ;;;output-print("Benefit of Seawall")
-;        ;;;output-print(seawall-benefit)
+
         ifelse seawall-benefit > 0 [
           ;let cost-2020 6600000000
         let cost-2020 mbta-cost-2020
@@ -3885,8 +3814,6 @@ to mbta-adaptation-decision-all-at-once
           let cost-perm cost-discount-perm * ((1 - external-financing-percent) * reduction-funding-access)
       let cost-all cost-discount-all * ((1 - external-financing-percent) * reduction-funding-access)
           set potential-sw-cost cost-all
-;          ;;;output-print("Cost/Benefit ratio")
-;          ;;;output-print(cost / seawall-benefit)
           set cost-benefit-seawall seawall-benefit / potential-sw-cost
       ;careful that this is let not set
           if flood-reaction-mbta = True [
@@ -3914,6 +3841,7 @@ to mbta-adaptation-decision-all-at-once
 end
 
 to mbta-adaptation-decision-segments
+  ;code for MBTA decision-making assuming adaptations are completed step by step
     ;we have one damage expected damage calculation so we can start as normal there, then go through segement by segment
     set foresight foresight-mun-pas-mbta
     setup-python-calcs-mbta
@@ -4031,6 +3959,7 @@ end
 
 
 to adaptation-decision-regional-authority
+  ;adaptation decision-making for a single regional authority agent
   ask municipalities [
     set foresight foresight-mun-pas-mbta
     ifelse name = "boston" [
@@ -4084,7 +4013,6 @@ to adaptation-decision-regional-authority
     set premium-adjusted premium * (1 - crs-discount)
 
     ]
-
 
     ;otherwise we are protected or not by municipal sw
    [set adapt-test-mun first [adaptation] of municipalities with [label = loc-test]]
@@ -4144,7 +4072,6 @@ to adaptation-decision-regional-authority
         let sw_damages python-output
         set thirty_year_damage_sw no_adapt_damages_1 + sw_damages
 ;
-
 ;             property_owner-projected-damages
 ;             py:set "year" year
              ;option 1: insurance alone - 1 year time step
@@ -4336,27 +4263,20 @@ to adaptation-decision-regional-authority
     set test-pos test-pos + 1]
 
   ;the code below looks at each segment of seawall independently
-  ;note: with lots of property_owners, we will have to think about how to do this...some cheats were done in the code because there were only 3 property_owners (1/30)
-
   ;Let's calculate a local or regional behavior ratio?
   ;let regional-damage sum [damage-time-step] of turtles
   ;set behave-ratio-ra 0
-
   let expected-mun-damages sum [annual-expected-damage] of municipalities
   let expected-dev-damages sum [annual-expected-damage] of property_owners
 
   ;Calculate adjustment if need
-
   ifelse flood-reaction-municipalities = True[
     let ra-total-annual-expected-damage (sum([annual-expected-damage] of municipalities) + sum([annual-expected-damage] of mbta-agents) + sum([annual-expected-damage] of private-assets) + sum([annual-expected-damage] of property_owners))
     ifelse ra-total-annual-expected-damage > 0[
         ;output-print(ra-total-annual-expected-damage)
         let ra-total-experienced-damage  (sum([damage-time-step] of municipalities) + sum([damage-time-step] of mbta-agents) + sum([damage-time-step] of private-assets) + sum([damage-time-step] of property_owners))
         set ra-behave-modifier ra-total-experienced-damage / ra-total-annual-expected-damage
-      ;output-print("new time step")
-      ;output-print(ra-total-experienced-damage)
-      ;output-print(ra-total-annual-expected-damage)
-     ; output-print(ra-behave-modifier)
+
       ]
       [;expected damages are less than 1
       set ra-behave-modifier 0.0001
@@ -4587,12 +4507,9 @@ end
 
 
 to adaptation-decision-voluntary-cooperation
+  ;adaptation decision-making for voluntary cooperation
   ;new rules:
       ;municipalities: assume that buy-in from other agents always makes sense- otherwise absolutely no incentivee to cooperate
-      ;mbta: can either adapt togetger or indepepndent
-      ;need to track cost-cooperative and cost-benefit-cooperative
-
-
   ;First, we need to calculate all of the expected costs and benefits
 
   ;ask municipalities about seawall benefits
@@ -4644,8 +4561,6 @@ to adaptation-decision-voluntary-cooperation
           let cost-2020 coastline * 7500
           let cost-2020-perm cost-2020 + (cost-2020 * permitting-cost-proportion)
           let cost-2020-all cost-2020-perm + (cost-2020 * foresight * O_M_proportion)
-          ;discount cost to whatever year we are in
-          ;COMME BACK HERES
           let cost-2020-with-maintenance-fee-perm ((cost-2020 * (1 + maintenance-fee)) + (cost-2020 * permitting-cost-proportion))
           let cost-2020-with-maintenance-fee-all (cost-2020-with-maintenance-fee-perm + (cost-2020 * foresight * O_M_proportion))
 
@@ -4709,7 +4624,6 @@ ask property_owners[
       [set ej-weight 1]
     ]
 
-
    ifelse adapt-test-mun = "seawall" [
     set flood-protect-height municipal-sw-height
   ]
@@ -4758,9 +4672,6 @@ ask property_owners[
         let sw_damages python-output
         set thirty_year_damage_sw no_adapt_damages_1 + sw_damages
 
-
-
-
       ;option 4: aquafence alone - projects for length of 'foresight'
       let aquafence-benefit (thirty_year_damage - thirty_year_damage_af) * ej-weight
       let aquafence-cost-2020  500000 + (foresight * 40000)
@@ -4770,7 +4681,6 @@ ask property_owners[
       set aquafence-cost-discount-all (aquafence-cost-2020-all)/((1 + discount) ^ (year - 2021))
       set aquafence-cost-perm aquafence-cost-discount-perm * ((1 - external-financing-percent) * reduction-funding-access)
       set aquafence-cost-all aquafence-cost-discount-perm * ((1 - external-financing-percent) * reduction-funding-access)
-
 
       ;option 5: seawall alone - projects for length of 'foresight'
       let seawall-benefit (thirty_year_damage - thirty_year_damage_sw) * ej-weight
@@ -4826,8 +4736,6 @@ ask property_owners[
 
       let best-ratio max benefit_cost_list_behavior
       set identifier position best-ratio benefit_cost_list_behavior
-      ;NOTE 2/27 ASSUMES PLANNED ADAPTATION COST INDICATES COST OF ADAPTATIONS ADN INSURANCE BOTH
-      ;CHANGE BELOW FOR TEST
       if best-ratio = 0 [
         set identifier 5]
 
@@ -4865,7 +4773,6 @@ ask property_owners[
         property_owner-projected-damages-af
         set thirty_year_damage python-output
 
-
         ;step 4: get seawall baseline
         setup-property_owner-python
         py:set "year" year + planning-horizon-delay
@@ -4878,8 +4785,6 @@ ask property_owners[
         property_owner-projected-damages-sw
         let sw_damages python-output
         set thirty_year_damage_sw no_adapt_damages_1 + sw_damages
-
-
 
       ;option 3: build seawall alone
       let seawall-benefit (thirty_year_damage - thirty_year_damage_sw) * ej-weight
@@ -4937,8 +4842,6 @@ ask property_owners[
 
       let best-ratio max benefit_cost_list_behavior
       set identifier position best-ratio benefit_cost_list_behavior
-      ;NOTE 2/27 ASSUMES PLANNED ADAPTATION COST INDICATES COST OF ADAPTATIONS ADN INSURANCE BOTH
-
 
        if identifier = 0[
         set insurance-intention False
@@ -4999,8 +4902,6 @@ ask property_owners[
         let sw_damages python-output
         set thirty_year_damage_sw no_adapt_damages_1 + sw_damages
 
-
-
              ;option 1: insurance alone - 1 year time step
              ;Comment out options 1, 2, and 3 BELOW FOR TEST
              let insurance-coverage (1 - deductible) * annual-expected-damage
@@ -5057,8 +4958,6 @@ ask property_owners[
              ;insruance-af-damages is the component of damages that insurance pays
              let insurance-sw-benefits (thirty_year_damage - (thirty_year_damage_sw - insurance-sw-damages)) * ej-weight
 
-
-
             ;option 4: aquafence alone - projects for length of 'foresight'
             let aquafence-benefit (thirty_year_damage - thirty_year_damage_af) * ej-weight
             let aquafence-cost-2020  500000 + (foresight * 40000)
@@ -5068,7 +4967,6 @@ ask property_owners[
             set aquafence-cost-discount-all (aquafence-cost-2020-all)/((1 + discount) ^ (year - 2021))
             set aquafence-cost-perm aquafence-cost-discount-perm * ((1 - external-financing-percent) * reduction-funding-access)
             set aquafence-cost-all aquafence-cost-discount-all * ((1 - external-financing-percent) * reduction-funding-access)
-
 
             ;option 5: seawall alone - projects for length of 'foresight'
             let seawall-benefit (thirty_year_damage - thirty_year_damage_sw) * ej-weight
@@ -5129,8 +5027,6 @@ ask property_owners[
 
       let best-ratio max benefit_cost_list_behavior
       set identifier position best-ratio benefit_cost_list_behavior
-      ;NOTE 2/27 ASSUMES PLANNED ADAPTATION COST INDICATES COST OF ADAPTATIONS ADN INSURANCE BOTH
-      ;CHANGE BELOW FOR TEST
       if best-ratio = 0 [
         set identifier 5]
       if identifier = 0 [
@@ -5196,9 +5092,6 @@ ask property_owners[
         let sw_damages python-output
         set thirty_year_damage_sw no_adapt_damages_1 + sw_damages
 
-
-
-      ;CHANGE BELOW FOR TEST
       ;option 1: purchase insurance
       let insurance-coverage (1 - deductible) * annual-expected-damage-af
       ifelse insurance-coverage > max-flood-insurance-coverage [
@@ -5230,8 +5123,6 @@ ask property_owners[
              ;insruance-af-damages is the component of damages that insurance pays
              let insurance-sw-benefits (thirty_year_damage - (thirty_year_damage_sw - insurance-sw-damages)) * ej-weight
 
-
-
       ;option 3: build seawall alone
        let seawall-benefit (thirty_year_damage - thirty_year_damage_sw) * ej-weight
             let seawall-cost-2020 (5300 * perimeter)
@@ -5244,15 +5135,12 @@ ask property_owners[
 
       ;option 4: Do nothing
 
-;COMMENT OUT BELOW FOR TEST
+
       let cost_list (list insurance-cost insurance-sw-cost seawall-cost-all)
       let benefit_list (list insurance-benefit insurance-sw-benefits seawall-benefit)
       set benefit_cost_list [0 0 0]
       set benefit_cost_list_behavior [0 0 0]
-;      let cost_list (list seawall-cost)
-;      let benefit_list (list seawall-benefit)
-;      set benefit_cost_list [0]
-;      set benefit_cost_list_behavior [0]
+
       set test-pos 0
       foreach cost_list[
         [x]-> let option-cost x
@@ -5771,10 +5659,6 @@ ask property_owners[
     [;there is already an on-site seawall- nothing to do...
     ]
   ]
-
-
-
-
 end
 
 
@@ -5810,10 +5694,6 @@ to setup-property_owner-python
     py:set "permitting_delay" permitting-delay
 
 end
-
-
-
-
 
 to setup-municipal-python
         ;py:set "max_range" foresight
@@ -5996,11 +5876,8 @@ to pa-projected-damages-sw
            set annual-expected-damage-sw py:runresult "this_year_damage_sw"
 end
 
-
-
 to property_owner-projected-damages
   ;adapt-test-mun marks adapatation of municipality
-
    py:set "flood_protect_height" flood-protect-height
    py:set "property_value" property_value
    ;py:set "year" (year + planning-horizon-delay)
@@ -6038,8 +5915,6 @@ to property_owner-projected-damages
             "thirty_year_damage = sum(annual_proj_damage)")
            ;set annual-expected-damage py:runresult "this_year_damage"
            set python-output py:runresult "thirty_year_damage"
-
-
 end
 
 to property_owner-projected-damages-af
@@ -6078,7 +5953,6 @@ to property_owner-projected-damages-af
             ;"   if i == 0:"
             ;"      this_year_damage_af = annual_damage"
             "thirty_year_damage_af = sum(annual_proj_damage_af)")
-
            ;set annual-expected-damage-af py:runresult "this_year_damage_af"
            set python-output py:runresult "thirty_year_damage_af"
 end
@@ -6218,25 +6092,20 @@ end
 
 
 to adaptation-decision-boston
+  ;adaptation decision making for the boston neighborhoods
   py:set "slr_proj" mun-slr-proj
   py:set "discount" discount
   py:set "AEP" mun-aep-list
-  ;py:set "max_range" foresight
   py:set "permitting_delay" permitting-delay
   let damage-list (list allston-dam-list backbay-dam-list charlestown-dam-list downtown-dam-list eastboston-dam-list fenway-dam-list ndorchester-combined-dam-list sboston-combined-dam-list sdorchester-dam-list)
-  ;coastline-length-list
-  ;boston-adaptation-list
   set test-pos 0
-  ;set annual-expected-damage-boston-list (list 0 0 0 0 0 0 0 0 0)
 
   foreach boston-adaptation-list [
     [x]-> set current-adapt x
 
     ifelse current-adapt = "none"[
       let coast-test item test-pos coastline-length-list
-      ;let damagelist [[0 0 0 0] [0 0 0 0 0] [0 0 0 0 0] [0 0 0 0 0] [0 0 0 0 0] [0 0 0 0 0] [0 0 0 0 0] [0 0 0 0 0] [0 0 0 0 0]]
       let damagelist item test-pos damage-list
-      ;;;;output-print(damagelist)
       py:set "quincy_0" item 0 damagelist
       py:set "quincy_1" item 1 damagelist
       py:set "quincy_3" item 2 damagelist
@@ -6271,22 +6140,16 @@ to adaptation-decision-boston
         let damage_w_adaptation python-output
         set thirty_year_damage_sw (damage_wout_adaptation + damage_w_adaptation)
 
-
-      ;municipality-projected-damages
-      ;py:set "year" year
-      ;municipality-projected-damages-sw
       let seawall-benefit (thirty_year_damage - thirty_year_damage_sw)
       set boston-thirty-year-damage-sw-list replace-item test-pos boston-thirty-year-damage-sw-list thirty_year_damage_sw
       set boston-thirty-year-damage-list replace-item test-pos boston-thirty-year-damage-list thirty_year_damage
       set boston-seawall-costs-avoided-list replace-item test-pos boston-seawall-costs-avoided-list seawall-benefit
       set annual-expected-damage-boston-list replace-item test-pos annual-expected-damage-boston-list annual-expected-damage
       set annual-expected-damage-boston-list-sw replace-item test-pos annual-expected-damage-boston-list-sw annual-expected-damage-sw
-      ;write code that will call the correct weight for EJ weighting, or leave it as 1 if the prioritization is 'normal'
       ifelse prioritization-method = "EJ" [
         set ej-weight item (test-pos + 2) harbor-region-EJ-weights
       ]
       [set ej-weight 1]
-
 
       if seawall-benefit > 0 [
         ;let coast-test 500
@@ -6305,7 +6168,6 @@ to adaptation-decision-boston
         ]
         set boston-seawall-cost-benefit-list replace-item test-pos boston-seawall-cost-benefit-list cost-benefit-seawall-bos
         if cost-benefit-seawall-bos > 1[
-          ;;;;output-print("building seawall")
         let adapt-intent "seawall"
         set boston-adaptation-intention-list replace-item test-pos boston-adaptation-intention-list adapt-intent
         set boston-planned-adaptation-cost-list replace-item test-pos boston-planned-adaptation-cost-list cost-perm
@@ -6321,6 +6183,7 @@ to adaptation-decision-boston
 end
 
 to adaptation-decision-boston-ra
+  ;calculates for the regional authority for boston neighborhoods
   ;py:set "max_range" foresight
   py:set "slr_proj" mun-slr-proj
   ;py:set "year" (year + planning-horizon-delay)
@@ -6337,7 +6200,6 @@ set boston-total-damage-list (list allston-dam-list backbay-dam-list charlestown
     [x]-> set current-adapt x
       let coast-test item test-pos coastline-length-list
       let damagelist item test-pos boston-total-damage-list
-      ;;;;output-print(damagelist)
       py:set "quincy_0" item 0 damagelist
       py:set "quincy_1" item 1 damagelist
       py:set "quincy_3" item 2 damagelist
@@ -6409,8 +6271,6 @@ to adaptation-decision-boston-vc
   set annual-expected-damage-boston-list (list 0 0 0 0 0 0 0 0 0)
   foreach boston-adaptation-list [
     [x]-> set current-adapt x
-    ;;output-print("test-pos")
-    ;;output-print(test-pos)
     ifelse current-adapt = "none"[
       let coast-test item test-pos coastline-length-list
       let damagelist item test-pos damage-list
@@ -6460,11 +6320,6 @@ to adaptation-decision-boston-vc
         let link-adjustment-sw (count(my-out-links) * link-value * thirty_year_damage_sw)
         set thirty_year_damage thirty_year_damage + link-adjustment
         set thirty_year_damage_sw thirty_year_damage_sw + link-adjustment-sw]
-        ;;;;output-print("30-year Damage without seawall")
-        ;;;;output-print(thirty_year_damage)
-        ;;;;output-print("30-year Damage with seawall")
-        ;;;;output-print(thirty_year_damage_sw)
-      ;write code that will call the correct weight for EJ weighting, or leave it as 1 if the prioritization is 'normal'
       ifelse prioritization-method = "EJ" [
         set ej-weight item (test-pos + 2) harbor-region-EJ-weights
       ]
@@ -6495,8 +6350,6 @@ to adaptation-decision-boston-vc
 
         set cost-benefit-seawall-bos ((seawall-benefit) / cost-all)
         set seawall-cost-benefit-cooperative (seawall-benefit / cost-all-with-maintenance-fee)
-        ;output-print(cost-benefit-seawall-bos)
-        ;output-print(seawall-cost-benefit-cooperative)
           if flood-reaction-municipalities = True[
           let behave-ratio (first [damage-time-step] of municipalities with [name = "boston"]) / annual-expected-damage
               set cost-benefit-seawall-bos cost-benefit-seawall-bos * behave-ratio
@@ -6524,6 +6377,7 @@ end
 
 
 to adaptation-implementation-regional-authority
+  ;adaptation implementation for the regional authority
 
   ;property_owners only have the option of purchasing insurance here- different suite of adaptations
   ask property_owners[
@@ -6706,6 +6560,7 @@ ask regional-authorities [
 end
 
 to updated-vc-11-28
+  ;adaptation implementation for voluntary cooperation
   ;Note this is written assuming funding is capped and mbta is in segments
    set mbta-cooperative-adaptation-contribution-proposed 0
   set mbta-cooperative-adaptation-contribution 0
@@ -6758,13 +6613,9 @@ to updated-vc-11-28
     ]
   ]
 
-
   ;Now, all agents either want to adapt (they have interest in cooperating with others, or not at all and this is marked with a true/false
   ;if a municipality/neighborhood is not interested in a joint seawall, then no cooperation will occur'
 
-    ;without funding cap, all work should be cooperative
-    ;Assumption: no municipality adaptation, no interest in cooperation among other agents
-      ;not sure of this line 11/28
   ask municipalities with [name != "boston"] [
      if adaptation = adaptation-intention [
       let mun-name name
@@ -6793,7 +6644,6 @@ to updated-vc-11-28
       if charles-adapt-intent = charles-adapt [
       ask private-assets with [name = "food dist"] [
       set cooperative-construct? False] ]
-
 
       ;for each seawall segment
       ;if municipality has cooperative construction, add up the others
@@ -6846,7 +6696,6 @@ to updated-vc-11-28
       ifelse planned-adapt != adapt [
 
           ifelse reg-coop-cost-ben > 1[
-          ;output-print("work")
             ;developers are all assumed to be downtown
         ;lets sum the potential contributed cost of developers and private assets
           ifelse test-pos = 3[
@@ -6894,10 +6743,7 @@ to updated-vc-11-28
     ]
 
       ]
-
-
   ;We need to see if agents are wwilling toa dapt based on their new cost benefit based on the changed level of financing
-
 
   ;Now... based on the municipality being will to cooperate, we can re-evaluate the other agents cooperating
   ;Agents in north shore + south shore
@@ -6939,12 +6785,12 @@ to updated-vc-11-28
     ]
         set test-pos test-pos + 1
         ]
-
+  ;continue to the next experiment
   vc-pt-2-11-29
 end
 
 to vc-pt-2-11-29
-
+  ; part 2 of adaptation implementation for voluntary cooperation
   ;Start the process of assessing cooperative efforts seawall by seawall- here we start with NS and SS
 
   ask municipalities with [name != "boston"] [
@@ -7246,13 +7092,9 @@ ask mbta-agents with [cooperative-construct? = True] [
     ]
   ]
 
-
-
     if mbta-adaptation-method = "segments" [
     ask mbta-agents [
-
       ;[;FUNDING-CAP is true
-
         ;code below adjusts existing mbta budget
       set test-pos 0
       set total-mbta-paid-so-far sum(mbta-cooperative-adaptation-contribution-list)
@@ -7602,9 +7444,6 @@ to line-by-line-adaptation-implementation-vc
       [set crs-discount 0]
     ]
 
-;here, funding is limited...which complicates the whole process- this is only for South shore and north shore municipalities
-    ;pick up here 8/16 after 12
-
     if funding-cap = True [
        ;start only if there is a need to adapt
        ifelse adaptation != adaptation-intention [
@@ -7751,14 +7590,8 @@ to line-by-line-adaptation-implementation-vc
       ]
     ]
       ]
-
-
-
-
   ;now we do it for boston
   boston-adaptation-implementation-vc
-
-
 
    ;Now, all other agents tack onto the municipalities- if they are cooperative and the agents are cooperative, they adapt
 
@@ -7964,6 +7797,7 @@ ask mbta-agents with [cooperative-construct? = True] [
 
 
     if mbta-adaptation-method = "segments" [
+    ;for mbta adapting segments by segments
     ask mbta-agents [
       ifelse funding-cap = False [
         set test-pos 0
@@ -8012,13 +7846,10 @@ ask mbta-agents with [cooperative-construct? = True] [
       set mbta-vc-total-costs mbta-vc-total-costs + mbta-vc-costs
       ]
 
-
       [;FUNDING-CAP is true
-
         ;code below adjusts existing mbta budget
       set test-pos 0
       set total-mbta-paid-so-far sum(mbta-cooperative-adaptation-contribution-list)
-
        set available-budget available-budget - total-mbta-paid-so-far
 
       ;code below from individual with funding cap
@@ -8056,7 +7887,6 @@ ask mbta-agents with [cooperative-construct? = True] [
         ;allows us to continue to keep track of how many loops we have done
           set test-pos test-pos + 1
       ]
-
 
       ;now we map the lists back to each other
       set time-step-costs 0
@@ -8138,13 +7968,12 @@ ask mbta-agents with [cooperative-construct? = True] [
 end
 
 to boston-adaptation-implementation-vc
-  ;now we do a similar process for boston
+  ;now we do a similar process for boston for adaptation implementation for voluntary cooperation
   set boston-vc-discount-rate-list [1 1 1 1 1 1 1 1 1]
   set wait-for-permit-boston [false false false false false false false false false]
   ask municipalities with [name = "boston"] [
     ;start with no funding cap
     ifelse funding-cap = false [
-      ;7/22 ADD MBTA SEGMENTS HERE - THIS WON'T WORK CODE OUTDATED AS OF 11/29/24
     set test-pos 0
     set time-step-costs 0
     ;checks each boston seawall segment in series
@@ -8166,9 +7995,6 @@ to boston-adaptation-implementation-vc
            let mbta-cost-percent item (test-pos + 2) mbta-cost-proportion-list
                 ;replaced damage percent with cost percent below so the max amount that the mbta will provide is what they would have contributed to that seawall to begin with
            set mbta-costs-current sum([planned-adaptation-cost] of mbta-agents with [cooperative-construct? = True]) * mbta-cost-percent
-                ;8/13 code check - SOMETHING IS HAPPENING HERE SO THAT MONEY IS LEAVING THE T BUT NOT BEING ACCOUNTED FOR?
-               ; output-print("mbta-costs that would be max pay")
-               ; output-print([mbta-costs-current] of mbta-agents)
            set mbta-cooperative-adaptation-contribution-proposed mbta-cooperative-adaptation-contribution-proposed + mbta-costs-current
            set mbta-cooperative-adaptation-contribution-list-proposed replace-item (test-pos + 2) mbta-cooperative-adaptation-contribution-list-proposed mbta-costs-current
            set available-budget-mbta sum([available-budget] of mbta-agents with [cooperative-construct? = True])]
@@ -8211,8 +8037,6 @@ to boston-adaptation-implementation-vc
           let down-payment 0.10
             ;ifelse available-budget + available-budget-mbta + dev-budget + pa-budget > sw-segment-cost * down-payment [
           ifelse neigh-permit-delay >= permitting-delay [
-                  ;Check 3: Do we have more than enough financing? (Municipality pays less
-                ;output-print("is this error? 1")
             set boston-adaptation-list replace-item test-pos boston-adaptation-list adapt-intention
             set available-budget available-budget - ((sw-segment-cost * (1 + maintenance-fee)) * (segment-discount))
             set adaptation-count adaptation-count + 1
@@ -8512,7 +8336,6 @@ to property_owner-adaptation-implementation-noncooperative
   ]
     [
       ;o&m work
-
       ifelse insurance-intention = True [
       ;set total-adaptation-cost total-adaptation-cost + sum ([premium] of property_owners with [insurance? = True])
             set adaptation-cost insurance-cost]
@@ -8646,7 +8469,6 @@ to pa-adaptation-implementation-noncooperative
 
         ]
 
-
         ]
       [set adaptation-cost 0
       set total-adaptation-cost total-adaptation-cost + adaptation-cost
@@ -8662,6 +8484,7 @@ to mbta-adaptation-implementation-noncooperative
     ifelse adaptation != adaptation-intention[
         ifelse permit-delay-count >= permitting-delay[
       ;assum 30% as down-payment
+          ;obvious ifelse to guarantee this as the next step
       ifelse 4 > 2 [
       set adaptation adaptation-intention
       set adaptation-count adaptation-count + 1
@@ -8854,7 +8677,6 @@ to adaptation-implementation
           [set adaptation-cost 0]
           set total-adaptation-cost adaptation-cost + total-adaptation-cost
         set adaptation-cost 0
-          ;CHECK BLOCKING THIS OUT 7/18
         ;set total-adaptation-cost total-adaptation-cost + sum ([premium] of property_owners with [insurance? = True])
         set permit-delay-count permit-delay-count + 1
       ]
@@ -9560,11 +9382,8 @@ to track_insurance_payout
 end
 
 
-
-
-
-
 to metrics
+  ;create the lists for the model to send out
   if model-version = "no adaptation" [
   time-step-damage-list
   cumulative-damage-list
@@ -9870,9 +9689,6 @@ to add_o_m_costs
     set o-m-cost-cum-ra o-m-cost-cum-ra + o-m-cost-ra
   ]
 
-
-
-
 end
 
 to add-discount-budget
@@ -9884,8 +9700,6 @@ to add-discount-budget
     set available-budget (available-budget / (1 + discount))]
   ask MBTA-agents[
     set available-budget (available-budget / (1 + discount))]
-
-
 end
 
 
@@ -9899,8 +9713,8 @@ to test
 end
 
 
-
 to profile
+  ;creates file that will time each step
   setup-patches
   setup-agents
   profiler:start
@@ -10931,6 +10745,16 @@ reduction-funding-access
 NIL
 HORIZONTAL
 
+TEXTBOX
+1546
+541
+1696
+569
+updated code only works w/ funding-cap on
+11
+0.0
+1
+
 @#$#@#$#@
 ## WHAT IS IT?
 
@@ -11334,1031 +11158,6 @@ NetLogo 6.4.0
 @#$#@#$#@
 @#$#@#$#@
 <experiments>
-  <experiment name="future-thinking-exp-slr-1-slrproj-1-ra-mbtacorrect-6-1" repetitions="3" runMetricsEveryStep="true">
-    <setup>setup-patches
-setup-python
-setup-agents</setup>
-    <go>go</go>
-    <timeLimit steps="80"/>
-    <metric>year</metric>
-    <metric>flood-height</metric>
-    <metric>model-adaptation-list</metric>
-    <metric>model-adaptation-cost-list</metric>
-    <metric>model-time-step-damage-list</metric>
-    <metric>model-cumulative-damage-list</metric>
-    <metric>model-cumulative-adaptation-cost-list</metric>
-    <metric>ra-adaptation-list</metric>
-    <metric>ra-total-adaptation-cost-list</metric>
-    <metric>ra-adaptation-cost-list</metric>
-    <metric>count (developers with [insurance? = True])</metric>
-    <enumeratedValueSet variable="model-version">
-      <value value="&quot;regional authority&quot;"/>
-      <value value="&quot;no cooperation&quot;"/>
-      <value value="&quot;voluntary cooperation&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="sea-level-rise">
-      <value value="1"/>
-      <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="link-value">
-      <value value="0.01"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mun-slr-proj">
-      <value value="1"/>
-      <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="discount">
-      <value value="0.03"/>
-      <value value="0.07"/>
-      <value value="0"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="storm-surge-method">
-      <value value="&quot;random&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="vc-linked-damages-dm">
-      <value value="false"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-developers">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-municipalities">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-private-assets">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-mbta">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-ra">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="multiplier_storms_annual_mean">
-      <value value="1"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="voluntary-coop-cost-subsidy">
-      <value value="0.05"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="insurance-module?">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="foresight-mun-pas-mbta">
-      <value value="30"/>
-      <value value="10"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="foresight-developers">
-      <value value="30"/>
-      <value value="10"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="municipal-sw-height">
-      <value value="15"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="external-financing-percent">
-      <value value="0.3"/>
-      <value value="0.1"/>
-      <value value="0.5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="funding-cap">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="permitting-delay">
-      <value value="0"/>
-      <value value="2"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="planning-horizon-delay">
-      <value value="0"/>
-      <value value="5"/>
-    </enumeratedValueSet>
-  </experiment>
-  <experiment name="base_runs" repetitions="200" sequentialRunOrder="false" runMetricsEveryStep="true">
-    <setup>setup-patches
-setup-python
-setup-agents</setup>
-    <go>go</go>
-    <timeLimit steps="80"/>
-    <metric>year</metric>
-    <metric>flood-height</metric>
-    <metric>model-adaptation-list</metric>
-    <metric>model-adaptation-cost-list</metric>
-    <metric>model-time-step-damage-list</metric>
-    <metric>model-cumulative-damage-list</metric>
-    <metric>model-cumulative-adaptation-cost-list</metric>
-    <metric>ra-adaptation-list</metric>
-    <metric>ra-total-adaptation-cost-list</metric>
-    <metric>ra-adaptation-cost-list</metric>
-    <metric>insurance-payout-total-list</metric>
-    <metric>insurance-payout-list</metric>
-    <metric>damages-paid-total-list</metric>
-    <metric>damages-paid-list</metric>
-    <metric>[insurance?] of developers with [dev-region = "boston"]</metric>
-    <metric>[insurance?] of developers with [dev-region = "north-shore"]</metric>
-    <metric>[insurance?] of developers with [dev-region = "south-shore"]</metric>
-    <enumeratedValueSet variable="model-version">
-      <value value="&quot;no adaptation&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="sea-level-rise">
-      <value value="0"/>
-      <value value="1"/>
-      <value value="3"/>
-      <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="link-value">
-      <value value="0.01"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mun-slr-proj">
-      <value value="0"/>
-      <value value="1"/>
-      <value value="3"/>
-      <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="discount">
-      <value value="0"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="storm-surge-method">
-      <value value="&quot;random&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="vc-linked-damages-dm">
-      <value value="false"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-developers">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-municipalities">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-private-assets">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-mbta">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-ra">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="multiplier_storms_annual_mean">
-      <value value="1"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="voluntary-coop-cost-subsidy">
-      <value value="0.05"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="insurance-module?">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="foresight-mun-pas-mbta">
-      <value value="30"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="foresight-developers">
-      <value value="30"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="municipal-sw-height">
-      <value value="15"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="external-financing-percent">
-      <value value="0.3"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="funding-cap">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="prioritization-method">
-      <value value="&quot;normal&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mbta-adaptation-method">
-      <value value="&quot;all-at-once&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="planning-horizon-delay">
-      <value value="0"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="permitting-delay">
-      <value value="2"/>
-    </enumeratedValueSet>
-  </experiment>
-  <experiment name="widespread exps" repetitions="10" runMetricsEveryStep="true">
-    <setup>setup-patches
-setup-python
-setup-agents</setup>
-    <go>go</go>
-    <timeLimit steps="80"/>
-    <metric>year</metric>
-    <metric>flood-height</metric>
-    <metric>model-adaptation-list</metric>
-    <metric>model-adaptation-cost-list</metric>
-    <metric>model-time-step-damage-list</metric>
-    <metric>model-cumulative-damage-list</metric>
-    <metric>model-cumulative-adaptation-cost-list</metric>
-    <metric>ra-adaptation-list</metric>
-    <metric>ra-total-adaptation-cost-list</metric>
-    <metric>ra-adaptation-cost-list</metric>
-    <metric>insurance-payout-total-list</metric>
-    <metric>insurance-payout-list</metric>
-    <metric>damages-paid-total-list</metric>
-    <metric>damages-paid-list</metric>
-    <metric>[insurance?] of developers with [dev-region = "boston"]</metric>
-    <metric>[insurance?] of developers with [dev-region = "north-shore"]</metric>
-    <metric>[insurance?] of developers with [dev-region = "south-shore"]</metric>
-    <enumeratedValueSet variable="model-version">
-      <value value="&quot;voluntary cooperation&quot;"/>
-      <value value="&quot;regional authority&quot;"/>
-      <value value="&quot;no cooperation&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="sea-level-rise">
-      <value value="1"/>
-      <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mun-slr-proj">
-      <value value="1"/>
-      <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="discount">
-      <value value="0"/>
-      <value value="0.07"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="storm-surge-method">
-      <value value="&quot;random&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="vc-linked-damages-dm">
-      <value value="false"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-developers">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-municipalities">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-private-assets">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-mbta">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-ra">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="multiplier_storms_annual_mean">
-      <value value="1"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="voluntary-coop-cost-subsidy">
-      <value value="0.05"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="insurance-module?">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="foresight-mun-pas-mbta">
-      <value value="30"/>
-      <value value="10"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="foresight-developers">
-      <value value="30"/>
-      <value value="10"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="municipal-sw-height">
-      <value value="15"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="external-financing-percent">
-      <value value="0"/>
-      <value value="0.7"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="funding-cap">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="planning-horizon-delay">
-      <value value="0"/>
-      <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="permitting-delay">
-      <value value="0"/>
-      <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="prioritization-method">
-      <value value="&quot;normal&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mbta-adaptation-strategy">
-      <value value="&quot;all-at-once&quot;"/>
-    </enumeratedValueSet>
-  </experiment>
-  <experiment name="base_runs_big_mbta_test" repetitions="100" sequentialRunOrder="false" runMetricsEveryStep="true">
-    <setup>setup-patches
-setup-python
-setup-agents</setup>
-    <go>go</go>
-    <timeLimit steps="80"/>
-    <metric>year</metric>
-    <metric>flood-height</metric>
-    <metric>model-adaptation-list</metric>
-    <metric>model-adaptation-cost-list</metric>
-    <metric>model-time-step-damage-list</metric>
-    <metric>model-cumulative-damage-list</metric>
-    <metric>model-cumulative-adaptation-cost-list</metric>
-    <metric>ra-adaptation-list</metric>
-    <metric>ra-total-adaptation-cost-list</metric>
-    <metric>ra-adaptation-cost-list</metric>
-    <metric>insurance-payout-total-list</metric>
-    <metric>insurance-payout-list</metric>
-    <metric>damages-paid-total-list</metric>
-    <metric>damages-paid-list</metric>
-    <metric>[insurance?] of developers with [dev-region = "boston"]</metric>
-    <metric>[insurance?] of developers with [dev-region = "north-shore"]</metric>
-    <metric>[insurance?] of developers with [dev-region = "south-shore"]</metric>
-    <metric>[total-adaptation-cost] of mbta-agents</metric>
-    <metric>mbta-cooperative-adaptation-contribution-list</metric>
-    <enumeratedValueSet variable="model-version">
-      <value value="&quot;regional authority&quot;"/>
-      <value value="&quot;voluntary cooperation&quot;"/>
-      <value value="&quot;no cooperation&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="sea-level-rise">
-      <value value="0"/>
-      <value value="1"/>
-      <value value="3"/>
-      <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="link-value">
-      <value value="0.01"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mun-slr-proj">
-      <value value="0"/>
-      <value value="1"/>
-      <value value="3"/>
-      <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="discount">
-      <value value="0.03"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="storm-surge-method">
-      <value value="&quot;random&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="vc-linked-damages-dm">
-      <value value="false"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-developers">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-municipalities">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-private-assets">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-mbta">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-ra">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="multiplier_storms_annual_mean">
-      <value value="1"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="voluntary-coop-cost-subsidy">
-      <value value="0.05"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="insurance-module?">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="foresight-mun-pas-mbta">
-      <value value="30"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="foresight-developers">
-      <value value="30"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="municipal-sw-height">
-      <value value="15"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="external-financing-percent">
-      <value value="0.3"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="funding-cap">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="prioritization-method">
-      <value value="&quot;normal&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mbta-adaptation-method">
-      <value value="&quot;all-at-once&quot;"/>
-      <value value="&quot;segments&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="planning-horizon-delay">
-      <value value="0"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="permitting-delay">
-      <value value="2"/>
-    </enumeratedValueSet>
-  </experiment>
-  <experiment name="widespread exps for mbta" repetitions="10" runMetricsEveryStep="true">
-    <setup>setup-patches
-setup-python
-setup-agents</setup>
-    <go>go</go>
-    <timeLimit steps="80"/>
-    <metric>year</metric>
-    <metric>flood-height</metric>
-    <metric>model-adaptation-list</metric>
-    <metric>model-adaptation-cost-list</metric>
-    <metric>model-time-step-damage-list</metric>
-    <metric>model-cumulative-damage-list</metric>
-    <metric>model-cumulative-adaptation-cost-list</metric>
-    <metric>ra-adaptation-list</metric>
-    <metric>ra-total-adaptation-cost-list</metric>
-    <metric>ra-adaptation-cost-list</metric>
-    <metric>insurance-payout-total-list</metric>
-    <metric>insurance-payout-list</metric>
-    <metric>damages-paid-total-list</metric>
-    <metric>damages-paid-list</metric>
-    <metric>[insurance?] of developers with [dev-region = "boston"]</metric>
-    <metric>[insurance?] of developers with [dev-region = "north-shore"]</metric>
-    <metric>[insurance?] of developers with [dev-region = "south-shore"]</metric>
-    <enumeratedValueSet variable="model-version">
-      <value value="&quot;voluntary cooperation&quot;"/>
-      <value value="&quot;no cooperation&quot;"/>
-      <value value="&quot;regional authority&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="sea-level-rise">
-      <value value="1"/>
-      <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mun-slr-proj">
-      <value value="1"/>
-      <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="discount">
-      <value value="0"/>
-      <value value="0.07"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="storm-surge-method">
-      <value value="&quot;random&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="vc-linked-damages-dm">
-      <value value="false"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-developers">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-municipalities">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-private-assets">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-mbta">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-ra">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="multiplier_storms_annual_mean">
-      <value value="1"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="voluntary-coop-cost-subsidy">
-      <value value="0.05"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="insurance-module?">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="foresight-mun-pas-mbta">
-      <value value="30"/>
-      <value value="10"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="foresight-developers">
-      <value value="30"/>
-      <value value="10"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="municipal-sw-height">
-      <value value="15"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="external-financing-percent">
-      <value value="0.2"/>
-      <value value="0.5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="funding-cap">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="planning-horizon-delay">
-      <value value="0"/>
-      <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="permitting-delay">
-      <value value="0"/>
-      <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="prioritization-method">
-      <value value="&quot;normal&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mbta-adaptation-method">
-      <value value="&quot;all-at-once&quot;"/>
-      <value value="&quot;segments&quot;"/>
-    </enumeratedValueSet>
-  </experiment>
-  <experiment name="slr2_fin2_proj1_d1" repetitions="10" runMetricsEveryStep="true">
-    <setup>setup-patches
-setup-python
-setup-agents</setup>
-    <go>go</go>
-    <timeLimit steps="80"/>
-    <metric>year</metric>
-    <metric>flood-height</metric>
-    <metric>model-adaptation-list</metric>
-    <metric>model-adaptation-cost-list</metric>
-    <metric>model-time-step-damage-list</metric>
-    <metric>model-cumulative-damage-list</metric>
-    <metric>model-cumulative-adaptation-cost-list</metric>
-    <metric>ra-adaptation-list</metric>
-    <metric>ra-total-adaptation-cost-list</metric>
-    <metric>ra-adaptation-cost-list</metric>
-    <metric>insurance-payout-total-list</metric>
-    <metric>insurance-payout-list</metric>
-    <metric>damages-paid-total-list</metric>
-    <metric>damages-paid-list</metric>
-    <metric>[insurance?] of developers with [dev-region = "boston"]</metric>
-    <metric>[insurance?] of developers with [dev-region = "north-shore"]</metric>
-    <metric>[insurance?] of developers with [dev-region = "south-shore"]</metric>
-    <enumeratedValueSet variable="model-version">
-      <value value="&quot;voluntary cooperation&quot;"/>
-      <value value="&quot;no cooperation&quot;"/>
-      <value value="&quot;regional authority&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="sea-level-rise">
-      <value value="0"/>
-      <value value="3"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mun-slr-proj">
-      <value value="1"/>
-      <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="discount">
-      <value value="0"/>
-      <value value="0.07"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="storm-surge-method">
-      <value value="&quot;random&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="vc-linked-damages-dm">
-      <value value="false"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-developers">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-municipalities">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-private-assets">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-mbta">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-ra">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="multiplier_storms_annual_mean">
-      <value value="1"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="voluntary-coop-cost-subsidy">
-      <value value="0.05"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="insurance-module?">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="foresight-mun-pas-mbta">
-      <value value="30"/>
-      <value value="10"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="foresight-developers">
-      <value value="30"/>
-      <value value="10"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="municipal-sw-height">
-      <value value="15"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="external-financing-percent">
-      <value value="0.2"/>
-      <value value="0.5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="funding-cap">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="planning-horizon-delay">
-      <value value="0"/>
-      <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="permitting-delay">
-      <value value="0"/>
-      <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="prioritization-method">
-      <value value="&quot;normal&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mbta-adaptation-method">
-      <value value="&quot;all-at-once&quot;"/>
-      <value value="&quot;segments&quot;"/>
-    </enumeratedValueSet>
-  </experiment>
-  <experiment name="slr2_fin2_proj2_d1" repetitions="10" runMetricsEveryStep="true">
-    <setup>setup-patches
-setup-python
-setup-agents</setup>
-    <go>go</go>
-    <timeLimit steps="80"/>
-    <metric>year</metric>
-    <metric>flood-height</metric>
-    <metric>model-adaptation-list</metric>
-    <metric>model-adaptation-cost-list</metric>
-    <metric>model-time-step-damage-list</metric>
-    <metric>model-cumulative-damage-list</metric>
-    <metric>model-cumulative-adaptation-cost-list</metric>
-    <metric>ra-adaptation-list</metric>
-    <metric>ra-total-adaptation-cost-list</metric>
-    <metric>ra-adaptation-cost-list</metric>
-    <metric>insurance-payout-total-list</metric>
-    <metric>insurance-payout-list</metric>
-    <metric>damages-paid-total-list</metric>
-    <metric>damages-paid-list</metric>
-    <metric>[insurance?] of developers with [dev-region = "boston"]</metric>
-    <metric>[insurance?] of developers with [dev-region = "north-shore"]</metric>
-    <metric>[insurance?] of developers with [dev-region = "south-shore"]</metric>
-    <enumeratedValueSet variable="model-version">
-      <value value="&quot;voluntary cooperation&quot;"/>
-      <value value="&quot;no cooperation&quot;"/>
-      <value value="&quot;regional authority&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="sea-level-rise">
-      <value value="0"/>
-      <value value="3"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mun-slr-proj">
-      <value value="0"/>
-      <value value="3"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="discount">
-      <value value="0"/>
-      <value value="0.07"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="storm-surge-method">
-      <value value="&quot;random&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="vc-linked-damages-dm">
-      <value value="false"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-developers">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-municipalities">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-private-assets">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-mbta">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-ra">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="multiplier_storms_annual_mean">
-      <value value="1"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="voluntary-coop-cost-subsidy">
-      <value value="0.05"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="insurance-module?">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="foresight-mun-pas-mbta">
-      <value value="30"/>
-      <value value="10"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="foresight-developers">
-      <value value="30"/>
-      <value value="10"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="municipal-sw-height">
-      <value value="15"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="external-financing-percent">
-      <value value="0.2"/>
-      <value value="0.5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="funding-cap">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="planning-horizon-delay">
-      <value value="0"/>
-      <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="permitting-delay">
-      <value value="0"/>
-      <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="prioritization-method">
-      <value value="&quot;normal&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mbta-adaptation-method">
-      <value value="&quot;all-at-once&quot;"/>
-      <value value="&quot;segments&quot;"/>
-    </enumeratedValueSet>
-  </experiment>
-  <experiment name="slr2_fin1_proj2_d1" repetitions="10" runMetricsEveryStep="true">
-    <setup>setup-patches
-setup-python
-setup-agents</setup>
-    <go>go</go>
-    <timeLimit steps="80"/>
-    <metric>year</metric>
-    <metric>flood-height</metric>
-    <metric>model-adaptation-list</metric>
-    <metric>model-adaptation-cost-list</metric>
-    <metric>model-time-step-damage-list</metric>
-    <metric>model-cumulative-damage-list</metric>
-    <metric>model-cumulative-adaptation-cost-list</metric>
-    <metric>ra-adaptation-list</metric>
-    <metric>ra-total-adaptation-cost-list</metric>
-    <metric>ra-adaptation-cost-list</metric>
-    <metric>insurance-payout-total-list</metric>
-    <metric>insurance-payout-list</metric>
-    <metric>damages-paid-total-list</metric>
-    <metric>damages-paid-list</metric>
-    <metric>[insurance?] of developers with [dev-region = "boston"]</metric>
-    <metric>[insurance?] of developers with [dev-region = "north-shore"]</metric>
-    <metric>[insurance?] of developers with [dev-region = "south-shore"]</metric>
-    <enumeratedValueSet variable="model-version">
-      <value value="&quot;voluntary cooperation&quot;"/>
-      <value value="&quot;no cooperation&quot;"/>
-      <value value="&quot;regional authority&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="sea-level-rise">
-      <value value="0"/>
-      <value value="3"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mun-slr-proj">
-      <value value="0"/>
-      <value value="3"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="discount">
-      <value value="0"/>
-      <value value="0.07"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="storm-surge-method">
-      <value value="&quot;random&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="vc-linked-damages-dm">
-      <value value="false"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-developers">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-municipalities">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-private-assets">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-mbta">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-ra">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="multiplier_storms_annual_mean">
-      <value value="1"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="voluntary-coop-cost-subsidy">
-      <value value="0.05"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="insurance-module?">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="foresight-mun-pas-mbta">
-      <value value="30"/>
-      <value value="10"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="foresight-developers">
-      <value value="30"/>
-      <value value="10"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="municipal-sw-height">
-      <value value="15"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="external-financing-percent">
-      <value value="0"/>
-      <value value="0.7"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="funding-cap">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="planning-horizon-delay">
-      <value value="0"/>
-      <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="permitting-delay">
-      <value value="0"/>
-      <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="prioritization-method">
-      <value value="&quot;normal&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mbta-adaptation-method">
-      <value value="&quot;all-at-once&quot;"/>
-      <value value="&quot;segments&quot;"/>
-    </enumeratedValueSet>
-  </experiment>
-  <experiment name="EJ_VC_RA" repetitions="100" sequentialRunOrder="false" runMetricsEveryStep="true">
-    <setup>setup-patches
-setup-python
-setup-agents</setup>
-    <go>go</go>
-    <timeLimit steps="80"/>
-    <metric>year</metric>
-    <metric>flood-height</metric>
-    <metric>model-adaptation-list</metric>
-    <metric>model-adaptation-cost-list</metric>
-    <metric>model-time-step-damage-list</metric>
-    <metric>model-cumulative-damage-list</metric>
-    <metric>model-cumulative-adaptation-cost-list</metric>
-    <metric>ra-adaptation-list</metric>
-    <metric>ra-total-adaptation-cost-list</metric>
-    <metric>ra-adaptation-cost-list</metric>
-    <metric>insurance-payout-total-list</metric>
-    <metric>insurance-payout-list</metric>
-    <metric>damages-paid-total-list</metric>
-    <metric>damages-paid-list</metric>
-    <metric>[insurance?] of developers with [dev-region = "boston"]</metric>
-    <metric>[insurance?] of developers with [dev-region = "north-shore"]</metric>
-    <metric>[insurance?] of developers with [dev-region = "south-shore"]</metric>
-    <metric>[total-adaptation-cost] of mbta-agents</metric>
-    <metric>mbta-cooperative-adaptation-contribution-list</metric>
-    <enumeratedValueSet variable="model-version">
-      <value value="&quot;voluntary cooperation&quot;"/>
-      <value value="&quot;regional authority&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="sea-level-rise">
-      <value value="0"/>
-      <value value="1"/>
-      <value value="3"/>
-      <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="link-value">
-      <value value="0.01"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mun-slr-proj">
-      <value value="0"/>
-      <value value="1"/>
-      <value value="3"/>
-      <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="discount">
-      <value value="0.03"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="storm-surge-method">
-      <value value="&quot;random&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="vc-linked-damages-dm">
-      <value value="false"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-developers">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-municipalities">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-private-assets">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-mbta">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-ra">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="multiplier_storms_annual_mean">
-      <value value="1"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="voluntary-coop-cost-subsidy">
-      <value value="0.05"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="insurance-module?">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="foresight-mun-pas-mbta">
-      <value value="30"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="foresight-developers">
-      <value value="30"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="municipal-sw-height">
-      <value value="15"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="external-financing-percent">
-      <value value="0.3"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="funding-cap">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="prioritization-method">
-      <value value="&quot;EJ&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mbta-adaptation-method">
-      <value value="&quot;all-at-once&quot;"/>
-      <value value="&quot;segments&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="planning-horizon-delay">
-      <value value="0"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="permitting-delay">
-      <value value="2"/>
-    </enumeratedValueSet>
-  </experiment>
-  <experiment name="example_damages_each_agent_no_Adapt" repetitions="1" sequentialRunOrder="false" runMetricsEveryStep="true">
-    <setup>setup-patches
-setup-python
-setup-agents</setup>
-    <go>go</go>
-    <timeLimit steps="80"/>
-    <metric>year</metric>
-    <metric>flood-height</metric>
-    <metric>first [damage-time-step] of municipalities with [name = "north-shore"]</metric>
-    <metric>first [damage-time-step] of municipalities with [name = "south-shore"]</metric>
-    <metric>first [damage-time-step] of municipalities with [name = "boston"]</metric>
-    <metric>first [damage-time-step] of mbta-agents</metric>
-    <metric>first [damage-time-step] of private-assets with [name = "food dist"]</metric>
-    <metric>first [damage-time-step] of private-assets with [name = "BOS-air"]</metric>
-    <metric>sum [damage-time-step] of developers with [dev-region = "boston"]</metric>
-    <metric>sum [damage-time-step] of developers with [dev-region = "north-shore"]</metric>
-    <metric>sum [damage-time-step] of developers with [dev-region = "south-shore"]</metric>
-    <enumeratedValueSet variable="model-version">
-      <value value="&quot;no adaptation&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="sea-level-rise">
-      <value value="1"/>
-      <value value="3"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="link-value">
-      <value value="0.01"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mun-slr-proj">
-      <value value="0"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="discount">
-      <value value="0.03"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="storm-surge-method">
-      <value value="&quot;random&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="vc-linked-damages-dm">
-      <value value="false"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-developers">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-municipalities">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-private-assets">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-mbta">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-ra">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="multiplier_storms_annual_mean">
-      <value value="1"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="voluntary-coop-cost-subsidy">
-      <value value="0.05"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="insurance-module?">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="foresight-mun-pas-mbta">
-      <value value="30"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="foresight-developers">
-      <value value="30"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="municipal-sw-height">
-      <value value="15"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="external-financing-percent">
-      <value value="0.3"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="funding-cap">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="prioritization-method">
-      <value value="&quot;normal&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mbta-adaptation-method">
-      <value value="&quot;all-at-once&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="planning-horizon-delay">
-      <value value="0"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="permitting-delay">
-      <value value="2"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="Method">
-      <value value="&quot;behavior space&quot;"/>
-    </enumeratedValueSet>
-    <steppedValueSet variable="flood-pattern" first="1" step="1" last="15"/>
-  </experiment>
   <experiment name="Base_runs_for_paper_ra" repetitions="1" sequentialRunOrder="false" runMetricsEveryStep="true">
     <setup>setup-patches
 setup-python
@@ -12580,132 +11379,7 @@ setup-agents</setup>
       <value value="0.01"/>
     </enumeratedValueSet>
   </experiment>
-  <experiment name="wide_runs_for_paper_ra_v1" repetitions="1" sequentialRunOrder="false" runMetricsEveryStep="true">
-    <setup>setup-patches
-setup-python
-setup-agents</setup>
-    <go>go</go>
-    <timeLimit steps="80"/>
-    <metric>year</metric>
-    <metric>flood-height</metric>
-    <metric>model-adaptation-list</metric>
-    <metric>model-adaptation-cost-list</metric>
-    <metric>model-time-step-damage-list</metric>
-    <metric>model-cumulative-damage-list</metric>
-    <metric>model-cumulative-adaptation-cost-list</metric>
-    <metric>ra-adaptation-list</metric>
-    <metric>ra-total-adaptation-cost-list</metric>
-    <metric>ra-adaptation-cost-list</metric>
-    <metric>insurance-payout-total-list</metric>
-    <metric>insurance-payout-list</metric>
-    <metric>damages-paid-total-list</metric>
-    <metric>damages-paid-list</metric>
-    <metric>[insurance?] of property_owners with [dev-region = "boston"]</metric>
-    <metric>[insurance?] of property_owners with [dev-region = "north-shore"]</metric>
-    <metric>[insurance?] of property_owners with [dev-region = "south-shore"]</metric>
-    <metric>[total-adaptation-cost] of mbta-agents</metric>
-    <metric>mbta-cooperative-adaptation-contribution-list</metric>
-    <metric>mbta-adaptation-list</metric>
-    <metric>model_o_m_costs</metric>
-    <metric>model_o_m_cum_costs</metric>
-    <metric>o-m-cost-ra</metric>
-    <metric>o-m-cost-cum-ra</metric>
-    <enumeratedValueSet variable="model-version">
-      <value value="&quot;regional authority&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="sea-level-rise">
-      <value value="1"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="link-value">
-      <value value="0.01"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mun-slr-proj">
-      <value value="3"/>
-      <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="discount">
-      <value value="0.03"/>
-      <value value="0.07"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="storm-surge-method">
-      <value value="&quot;random&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-property_owners">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-municipalities">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-private-assets">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-mbta">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-ra">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="multiplier_storms_annual_mean">
-      <value value="1"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="insurance-module?">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="foresight-mun-pas-mbta">
-      <value value="30"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="foresight-property_owners">
-      <value value="30"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="municipal-sw-height">
-      <value value="15"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="external-financing-percent">
-      <value value="0.3"/>
-      <value value="0.5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="funding-cap">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="prioritization-method">
-      <value value="&quot;normal&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mbta-adaptation-method">
-      <value value="&quot;segments&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="planning-horizon-delay">
-      <value value="0"/>
-      <value value="5"/>
-      <value value="10"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="permitting-delay">
-      <value value="0"/>
-      <value value="5"/>
-      <value value="10"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="Method">
-      <value value="&quot;behavior space&quot;"/>
-    </enumeratedValueSet>
-    <steppedValueSet variable="flood-pattern" first="1" step="1" last="10"/>
-    <enumeratedValueSet variable="reduction-funding-access">
-      <value value="0.1"/>
-      <value value="0.5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="permitting-cost-proportion">
-      <value value="0.1"/>
-      <value value="0.2"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mbta-cost-2020">
-      <value value="6600000000"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="O_M_proportion">
-      <value value="0.01"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="maintenance-fee">
-      <value value="0.1"/>
-    </enumeratedValueSet>
-  </experiment>
-  <experiment name="ra_no_main" repetitions="1" sequentialRunOrder="false" runMetricsEveryStep="true">
+  <experiment name="widespread_ensemble_template" repetitions="1" sequentialRunOrder="false" runMetricsEveryStep="true">
     <setup>setup-patches
 setup-python
 setup-agents</setup>
@@ -12828,254 +11502,6 @@ setup-agents</setup>
     </enumeratedValueSet>
     <enumeratedValueSet variable="maintenance-fee">
       <value value="0"/>
-    </enumeratedValueSet>
-  </experiment>
-  <experiment name="TREY RUN THIS" repetitions="1" sequentialRunOrder="false" runMetricsEveryStep="true">
-    <setup>setup-patches
-setup-python
-setup-agents</setup>
-    <go>go</go>
-    <timeLimit steps="80"/>
-    <metric>year</metric>
-    <metric>flood-height</metric>
-    <metric>model-adaptation-list</metric>
-    <metric>model-adaptation-cost-list</metric>
-    <metric>model-time-step-damage-list</metric>
-    <metric>model-cumulative-damage-list</metric>
-    <metric>model-cumulative-adaptation-cost-list</metric>
-    <metric>ra-adaptation-list</metric>
-    <metric>ra-total-adaptation-cost-list</metric>
-    <metric>ra-adaptation-cost-list</metric>
-    <metric>insurance-payout-total-list</metric>
-    <metric>insurance-payout-list</metric>
-    <metric>damages-paid-total-list</metric>
-    <metric>damages-paid-list</metric>
-    <metric>[insurance?] of property_owners with [dev-region = "boston"]</metric>
-    <metric>[insurance?] of property_owners with [dev-region = "north-shore"]</metric>
-    <metric>[insurance?] of property_owners with [dev-region = "south-shore"]</metric>
-    <metric>[total-adaptation-cost] of mbta-agents</metric>
-    <metric>mbta-cooperative-adaptation-contribution-list</metric>
-    <metric>mbta-adaptation-list</metric>
-    <metric>model_o_m_costs</metric>
-    <metric>model_o_m_cum_costs</metric>
-    <metric>o-m-cost-ra</metric>
-    <metric>o-m-cost-cum-ra</metric>
-    <enumeratedValueSet variable="model-version">
-      <value value="&quot;regional authority&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="sea-level-rise">
-      <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="link-value">
-      <value value="0.01"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mun-slr-proj">
-      <value value="3"/>
-      <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="discount">
-      <value value="0.03"/>
-      <value value="0.07"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="storm-surge-method">
-      <value value="&quot;random&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-property_owners">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-municipalities">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-private-assets">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-mbta">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-ra">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="multiplier_storms_annual_mean">
-      <value value="1"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="insurance-module?">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="foresight-mun-pas-mbta">
-      <value value="30"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="foresight-property_owners">
-      <value value="30"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="municipal-sw-height">
-      <value value="15"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="external-financing-percent">
-      <value value="0.3"/>
-      <value value="0.5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="funding-cap">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="prioritization-method">
-      <value value="&quot;normal&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mbta-adaptation-method">
-      <value value="&quot;segments&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="planning-horizon-delay">
-      <value value="0"/>
-      <value value="5"/>
-      <value value="10"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="permitting-delay">
-      <value value="0"/>
-      <value value="5"/>
-      <value value="10"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="Method">
-      <value value="&quot;behavior space&quot;"/>
-    </enumeratedValueSet>
-    <steppedValueSet variable="flood-pattern" first="1" step="1" last="10"/>
-    <enumeratedValueSet variable="reduction-funding-access">
-      <value value="0.1"/>
-      <value value="0.5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="permitting-cost-proportion">
-      <value value="0.1"/>
-      <value value="0.2"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mbta-cost-2020">
-      <value value="6600000000"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="O_M_proportion">
-      <value value="0.01"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="maintenance-fee">
-      <value value="0"/>
-      <value value="0.1"/>
-    </enumeratedValueSet>
-  </experiment>
-  <experiment name="test_ss_adaptation" repetitions="1" sequentialRunOrder="false" runMetricsEveryStep="true">
-    <setup>setup-patches
-setup-python
-setup-agents</setup>
-    <go>go</go>
-    <timeLimit steps="80"/>
-    <metric>year</metric>
-    <metric>flood-height</metric>
-    <metric>model-adaptation-list</metric>
-    <metric>model-adaptation-cost-list</metric>
-    <metric>model-time-step-damage-list</metric>
-    <metric>model-cumulative-damage-list</metric>
-    <metric>model-cumulative-adaptation-cost-list</metric>
-    <metric>ra-adaptation-list</metric>
-    <metric>ra-total-adaptation-cost-list</metric>
-    <metric>ra-adaptation-cost-list</metric>
-    <metric>insurance-payout-total-list</metric>
-    <metric>insurance-payout-list</metric>
-    <metric>damages-paid-total-list</metric>
-    <metric>damages-paid-list</metric>
-    <metric>[insurance?] of property_owners with [dev-region = "boston"]</metric>
-    <metric>[insurance?] of property_owners with [dev-region = "north-shore"]</metric>
-    <metric>[insurance?] of property_owners with [dev-region = "south-shore"]</metric>
-    <metric>[total-adaptation-cost] of mbta-agents</metric>
-    <metric>mbta-cooperative-adaptation-contribution-list</metric>
-    <metric>mbta-adaptation-list</metric>
-    <metric>model_o_m_costs</metric>
-    <metric>model_o_m_cum_costs</metric>
-    <metric>o-m-cost-ra</metric>
-    <metric>o-m-cost-cum-ra</metric>
-    <enumeratedValueSet variable="model-version">
-      <value value="&quot;no adaptation&quot;"/>
-      <value value="&quot;no cooperation&quot;"/>
-      <value value="&quot;voluntary cooperation&quot;"/>
-      <value value="&quot;regional authority&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="sea-level-rise">
-      <value value="3"/>
-      <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="link-value">
-      <value value="0.01"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mun-slr-proj">
-      <value value="0"/>
-      <value value="1"/>
-      <value value="3"/>
-      <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="discount">
-      <value value="0.03"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="storm-surge-method">
-      <value value="&quot;random&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-property_owners">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-municipalities">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-private-assets">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-mbta">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-ra">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="multiplier_storms_annual_mean">
-      <value value="1"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="insurance-module?">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="foresight-mun-pas-mbta">
-      <value value="30"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="foresight-property_owners">
-      <value value="30"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="municipal-sw-height">
-      <value value="15"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="external-financing-percent">
-      <value value="0.3"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="funding-cap">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="prioritization-method">
-      <value value="&quot;normal&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mbta-adaptation-method">
-      <value value="&quot;segments&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="planning-horizon-delay">
-      <value value="0"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="permitting-delay">
-      <value value="3"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="Method">
-      <value value="&quot;behavior space&quot;"/>
-    </enumeratedValueSet>
-    <steppedValueSet variable="flood-pattern" first="1" step="1" last="2"/>
-    <enumeratedValueSet variable="reduction-funding-access">
-      <value value="0.5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="permitting-cost-proportion">
-      <value value="0.1"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mbta-cost-2020">
-      <value value="6600000000"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="O_M_proportion">
-      <value value="0.01"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="maintenance-fee">
       <value value="0.1"/>
     </enumeratedValueSet>
   </experiment>
@@ -13202,130 +11628,6 @@ setup-agents</setup>
     </enumeratedValueSet>
     <enumeratedValueSet variable="maintenance-fee">
       <value value="0"/>
-      <value value="0.1"/>
-    </enumeratedValueSet>
-  </experiment>
-  <experiment name="Base_runs_subset_fixed_mbta_discount" repetitions="1" sequentialRunOrder="false" runMetricsEveryStep="true">
-    <setup>setup-patches
-setup-python
-setup-agents</setup>
-    <go>go</go>
-    <timeLimit steps="80"/>
-    <metric>year</metric>
-    <metric>flood-height</metric>
-    <metric>model-adaptation-list</metric>
-    <metric>model-adaptation-cost-list</metric>
-    <metric>model-time-step-damage-list</metric>
-    <metric>model-cumulative-damage-list</metric>
-    <metric>model-cumulative-adaptation-cost-list</metric>
-    <metric>ra-adaptation-list</metric>
-    <metric>ra-total-adaptation-cost-list</metric>
-    <metric>ra-adaptation-cost-list</metric>
-    <metric>insurance-payout-total-list</metric>
-    <metric>insurance-payout-list</metric>
-    <metric>damages-paid-total-list</metric>
-    <metric>damages-paid-list</metric>
-    <metric>[insurance?] of property_owners with [dev-region = "boston"]</metric>
-    <metric>[insurance?] of property_owners with [dev-region = "north-shore"]</metric>
-    <metric>[insurance?] of property_owners with [dev-region = "south-shore"]</metric>
-    <metric>[total-adaptation-cost] of mbta-agents</metric>
-    <metric>mbta-cooperative-adaptation-contribution-list</metric>
-    <metric>mbta-adaptation-list</metric>
-    <metric>model_o_m_costs</metric>
-    <metric>model_o_m_cum_costs</metric>
-    <metric>o-m-cost-ra</metric>
-    <metric>o-m-cost-cum-ra</metric>
-    <enumeratedValueSet variable="model-version">
-      <value value="&quot;no cooperation&quot;"/>
-      <value value="&quot;voluntary cooperation&quot;"/>
-      <value value="&quot;regional authority&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="sea-level-rise">
-      <value value="0"/>
-      <value value="1"/>
-      <value value="3"/>
-      <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="link-value">
-      <value value="0.01"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mun-slr-proj">
-      <value value="0"/>
-      <value value="1"/>
-      <value value="3"/>
-      <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="discount">
-      <value value="0.03"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="storm-surge-method">
-      <value value="&quot;random&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-property_owners">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-municipalities">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-private-assets">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-mbta">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="flood-reaction-ra">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="multiplier_storms_annual_mean">
-      <value value="1"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="insurance-module?">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="foresight-mun-pas-mbta">
-      <value value="30"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="foresight-property_owners">
-      <value value="30"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="municipal-sw-height">
-      <value value="15"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="external-financing-percent">
-      <value value="0.3"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="funding-cap">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="prioritization-method">
-      <value value="&quot;normal&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mbta-adaptation-method">
-      <value value="&quot;segments&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="planning-horizon-delay">
-      <value value="0"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="permitting-delay">
-      <value value="3"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="Method">
-      <value value="&quot;behavior space&quot;"/>
-    </enumeratedValueSet>
-    <steppedValueSet variable="flood-pattern" first="1" step="1" last="50"/>
-    <enumeratedValueSet variable="reduction-funding-access">
-      <value value="0.5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="permitting-cost-proportion">
-      <value value="0.1"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mbta-cost-2020">
-      <value value="6600000000"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="O_M_proportion">
-      <value value="0.01"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="maintenance-fee">
       <value value="0.1"/>
     </enumeratedValueSet>
   </experiment>
