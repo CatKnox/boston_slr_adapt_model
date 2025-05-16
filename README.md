@@ -8,7 +8,14 @@ The model was designed to quantify the trade-offs of three adaptation regimes in
 The repo contains files necessary to run the SLR model and analyze the outputs, contained in the relevant files. All data used for the paper, [INSERT PAPER NAME], are stored in a separate zenodo repository: [INSERT LINK/DOI].
 
 # To run the model:
-Running the model 
-
+Running the model requires a user to have both NetLogo 6.4 and python installed. The python version used for model development is 3.12 but other versions of python may be sufficient. All files supporting the NetLogo model must be installed in the same folder. Experiments can be run through NetLogo's Behvarior Space and saved as outputs to the user's computer.
+| File Name  | Use |
+| ------------- | ------------- |
+| Content Cell  | Content Cell  |
+| Content Cell  | Content Cell  |
 
 # To analyze outputs:
+| File Name  | Use |
+| ------------- | ------------- |
+| Content Cell  | Content Cell  |
+| Content Cell  | Content Cell  |
