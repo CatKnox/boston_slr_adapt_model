@@ -11,8 +11,11 @@ The repo contains files necessary to run the SLR model and analyze the outputs, 
 Running the model requires a user to have both NetLogo 6.4 and python installed. The python version used for model development is 3.12 but other versions of python may be sufficient. All files supporting the NetLogo model must be installed in the same folder. Experiments can be run through NetLogo's Behvarior Space and saved as outputs to the user's computer.
 | File Name  | Use |
 | ------------- | ------------- |
-| Content Cell  | Content Cell  |
-| Content Cell  | Content Cell  |
+| slr_adapt_model.nlogo  | The model itself built in NetLogo 6.4 (Wilensky, U (1999). NetLogo. http://ccl.northwestern.edu/netlogo/. Center for Connected Learning and Computer-Based Modeling, Northwestern University, Evanston, IL.)  |
+| total_harbor files  | GIS files to generate the proper shapes within the NetLogo model.  |
+| boston_logan_maybe files  | GIS files used to ID Boston Logan  |
+| storm_surge_pattern_slr_0.csv, storm_surge_pattern_slr_1.csv, storm_surge_pattern_slr_3.csv, storm_surge_pattern_slr_5.csv  | Pre-generated patterns of storm surges to use in experiments.  |
+
 
 # To analyze outputs:
 | File Name  | Use |
