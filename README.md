@@ -15,10 +15,14 @@ Running the model requires a user to have both NetLogo 6.4 and python installed.
 | total_harbor files  | GIS files to generate the proper shapes within the NetLogo model.  |
 | boston_logan_maybe files  | GIS files used for Boston Logan airport location  |
 | storm_surge_pattern_slr_0.csv, storm_surge_pattern_slr_1.csv, storm_surge_pattern_slr_3.csv, storm_surge_pattern_slr_5.csv  | Pre-generated patterns of storm surges to use in experiments.  |
-
+| weight_factors_calcs.csv | Used to calculate the values of equity weighting included in the Model |
+| model_details.pdf | Provides an overview of all model details (NEED TO ADD) |
 
 # To analyze outputs:
+The raw NetLogo outputs are stored on .........
 | File Name  | Use |
 | ------------- | ------------- |
-| Content Cell  | Content Cell  |
-| Content Cell  | Content Cell  |
+| Jupyter Notes   | Process data + generate figures  |
+| 2 R Cart Files  | Content Cell  |
+| R ANOVA Files | Content Cell  |
+
