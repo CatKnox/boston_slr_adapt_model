@@ -25,5 +25,8 @@ The following files can be found in the data folder and are used to process the 
 | ------------- | ------------- |
 | Jupyter Notes   | Process data + generate figures  |
 | cart_gini_cases.R  | Used for the CART analysis in section 4.4.2 to generate trees based on the Gini Index outcomes |
-| R ANOVA Files | Content Cell  |
+| anova_Error_contribution.R | This code is used to calculate the error contribution from each lever over time to toal model error |
+| base_cart_setup.R | This code represents the format and layout for the CART trees generated across the ensemble.  |
+| cart_by_agent_comp_to_nc | More specific than the code above, this code created CART trees for the comparison of cooperative to non-cooperative approaches. |
+
 
