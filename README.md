@@ -20,9 +20,10 @@ Running the model requires a user to have both NetLogo 6.4 and python installed.
 
 # To analyze outputs:
 The raw NetLogo outputs are stored on .........
+The following files can be found in the data folder and are used to process the output data.
 | File Name  | Use |
 | ------------- | ------------- |
 | Jupyter Notes   | Process data + generate figures  |
-| 2 R Cart Files  | Content Cell  |
+| cart_gini_cases.R  | Used for the CART analysis in section 4.4.2 to generate trees based on the Gini Index outcomes |
 | R ANOVA Files | Content Cell  |
 
