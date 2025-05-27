@@ -23,7 +23,7 @@ The raw NetLogo outputs are stored on .........
 The following files can be found in the data folder and are used to process the output data.
 | File Name  | Use |
 | ------------- | ------------- |
-| figure_generation_and_data_processing   | The majority of the analysis is within this notebook. This was used to process outputs and generate the majority of figures used in paper submission.  |
+| figure_generation_and_data_processing.ipynb   | The majority of the analysis is within this notebook. This was used to process outputs and generate the majority of figures used in paper submission.  |
 | cart_gini_cases.R  | Used for the CART analysis in section 4.4.2 to generate trees based on the Gini Index outcomes |
 | anova_Error_contribution.R | This code is used to calculate the error contribution from each lever over time to toal model error |
 | base_cart_setup.R | This code represents the format and layout for the CART trees generated across the ensemble.  |
