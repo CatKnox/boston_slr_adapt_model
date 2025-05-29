@@ -1,11 +1,11 @@
 # Authors
-The model and coding files uploaded to this repo are authored by Catherine Knox, with code contributions from Jonathan Lamontagne and Abigail Birnbaum. This repository provides to run the Boston Sea Level Rise Adaptation Model and to analyze output data. This repository accompanies the paper written by Catherine Knox, Paul Kirhsen, Jonathan Lamontagne, and Shafiqul Islam at Tufts University. All four authors were involved in model design and development.  
+The model and coding files uploaded to this repo are authored by Catherine Knox, with code contributions from Jonathan Lamontagne and Abigail Birnbaum. This repository provides all software to run the Boston Sea Level Rise Adaptation Model and to analyze output data. This repository accompanies the paper written by Catherine Knox, Paul Kirhsen, Jonathan Lamontagne, and Shafiqul Islam at Tufts University. All four authors were involved in model design and development.  
 
 # Purpose
 The model was designed to quantify the trade-offs of three adaptation regimes in Boston Harbor: no cooperation, voluntary cooperation, or a regional authority. The model contains options for expliclty incorporating numerous levers in coastal, behavioral, legislative, and financial systems.
 
 # Repository Overview
-The repo contains files necessary to run the SLR model and analyze the outputs, contained in the relevant files. All data used for the paper, "More Than the Climate: Governance and Coordination Trade-offs for Sea Level Rise Adaptation in Boston", are stored in a separate zenodo repository: [INSERT LINK/DOI].
+The repo contains files necessary to run the SLR model and analyze the outputs, contained in the relevant files. All data used for the paper, "More Than the Climate: Governance and Coordination Trade-offs for Sea Level Rise Adaptation in Boston", are stored in a separate zenodo repository: 10.5281/zenodo.15477516.
 
 # To run the model:
 Running the model requires a user to have both NetLogo 6.4 and python installed. The python version used for model development is 3.12 but other versions of python may be sufficient. All files supporting the NetLogo model must be installed in the same folder. Experiments can be run through NetLogo's Behvarior Space and saved as outputs to the user's computer. All of the following files can be found in the folder labeled 'model.'
@@ -19,7 +19,7 @@ Running the model requires a user to have both NetLogo 6.4 and python installed.
 |model_documentation.doc | Provides all detail and overview of the model. |
 
 # To analyze outputs:
-The raw NetLogo outputs are stored on .........
+The raw NetLogo outputs are stored on a zenodo repository: 10.5281/zenodo.15477516.
 The following files can be found in the data folder and are used to process the output data.
 | File Name  | Use |
 | ------------- | ------------- |
